@@ -1,0 +1,3 @@
+exportPattern("^[^[[:punct:]]]*[^\ ]*")
+importFrom("utils", "head", "read.csv", "read.delim",
+         "setTxtProgressBar", "tail", "txtProgressBar", "write.csv")

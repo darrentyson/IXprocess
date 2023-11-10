@@ -1,0 +1,11 @@
+Package: IXprocess
+Type: Package
+Title: Handling annotation and processing of ImageXpress/MetaXpress image data
+Version: 0.0.1
+Date: 2020-10-01
+Author: Darren R. Tyson
+Maintainer: Darren R. Tyson <d.tyson@vanderbilt.edu>
+Description: Most image file (e.g. Molecular Dynamics ImageXpress) parsing functions 
+    were extracted and modified from the diprate package.   
+License: GPL-3
+RoxygenNote: 7.0.2
