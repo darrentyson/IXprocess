@@ -15,7 +15,7 @@ getPlateInfo <- function(MBKfilePath)
         },
         error=function(cond)
         {
-            message(cat('error',cond,'in:',MBKfilePath,"\n"))
+            message(cat('error',cond[[1]],'in:',MBKfilePath,"\n"))
             return(NA)
         }
     )
@@ -75,4 +75,20 @@ findPlateDir <- function(dirpath)
     
     # must have 'Plate' in directory name
     return(dl[grepl('Plate',dl)])
+}
+
+
+makeFileInfo <- function(topdir, save=TRUE, overwrite=FALSE) {
+    plate_dir <- findPlateDir(topdir)
+    fi <- do.call(rbind, lapply(plate_dir, getPlateInfo))
+    fi <- fi[!duplicated(fi$file_name),]    # remove any image file duplicates
+    
+    fi_filepath <- file.path(topdir,"ImageFileInfo.csv")
+    if(save & (!file.exists(fi_filepath) | overwrite)) {
+        message(cat("Writing file:",fi_filepath,"\n"))
+        write.csv(fi, file=fi_filepath, row.names=FALSE)
+    } else {
+        message(cat(fi_filepath,"file exists and will not be overwritten\n"))
+    }
+    return(fi)
 }
