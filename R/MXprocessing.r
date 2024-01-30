@@ -11,7 +11,7 @@ getPlateInfo <- function(MBKfilePath)
     message(cat("\nProcessing:",MBKfilePath,"\n"))
     d <- tryCatch(
         {
-            parseMBK(paste0(MBKfilePath,'/PlateInfo.MBK'))
+            parseMBK(file.path(MBKfilePath,'PlateInfo.MBK'))
         },
         error=function(cond)
         {
@@ -93,3 +93,72 @@ makeFileInfo <- function(topdir, save=TRUE, overwrite=FALSE) {
     }
     return(fi)
 }
+
+hasEmptyPlateInfo <- function(dirvec, verbose=FALSE) {
+    sapply(dirvec, function(topdir) {
+        plate_dir <- findPlateDir(topdir)
+        if(length(plate_dir)==0) {
+            message(cat("No Plate directories found in ",topdir,"\n"))
+            return(FALSE)
+        }
+        
+        file_paths <- sapply(plate_dir, function(x) file.path(x,'PlateInfo.MBK'))
+        if(verbose) message(cat(paste("Expecting PlateInfo.MBK files: ",file_paths, collapse="\n")))
+        file_check <- tryCatch({file.exists(file_paths)},error=function(cond) {FALSE})
+        if(any(!file.exists(file_paths))) {
+            message(cat("Missing PlateInfo.MBK files in:",paste(file_paths[!file.exists(file_paths)], collapse="\n")))
+            file_paths <- file_paths[file.exists(file_paths)]
+        }
+        
+        if(length(file_paths)==0) {
+            message(cat("Could not find PlateInfo.MBK in ",topdir))
+            return(TRUE)
+        } else {
+            size <- file.info(file_paths)$size
+            return(any(size==0))
+        }
+    })
+}
+
+rename_imdir <- function(export_dirpath, pattern=export_pattern) {
+    confirmed_export_dirs <- export_dirpath[grepl(pattern,export_dirpath)]
+    confirmed_export_dirs <- confirmed_export_dirs[grepl(pattern,basename(confirmed_export_dirs))]
+    
+    file.rename(confirmed_export_dirs,file.path(dirname(confirmed_export_dirs),"images"))
+}
+
+find_and_rename_image_dirs <- function(path, depth=3) {
+    lvl_1 <- list.dirs(path, recursive=FALSE)
+    lvl_2 <- lapply(lvl_1, function(d) list.dirs(d, recursive=FALSE))
+    
+    if(any(unlist(sapply(lvl_2, function(x) grepl(export_pattern, x))))) {
+        lvl2_exports <- unlist(lvl_2)[unlist(sapply(lvl_2, function(x) grepl(export_pattern, x)))]
+        rename_imdir(lvl2_exports)
+        lvl_2 <- lapply(lvl_1, function(d) list.dirs(d, recursive=FALSE))
+    }
+    
+    lvl_3 <- lapply(lvl_2, function(d) list.dirs(d, recursive=FALSE))
+    
+    if(any(unlist(sapply(lvl_3, function(x) grepl(export_pattern, x))))) {
+        lvl3_exports <- unlist(lvl_3)[unlist(sapply(lvl_3, function(x) grepl(export_pattern, x)))]
+        rename_imdir(lvl3_exports)
+        lvl_3 <- lapply(lvl_2, function(d) list.dirs(d, recursive=FALSE))
+    }
+    
+    out <- c(unlist(lvl_2)[unlist(sapply(lvl_2, function(x) grepl("images",x)))],
+             unlist(lvl_3)[unlist(sapply(lvl_3, function(x) grepl("images",x)))])
+    out <- out[basename(out)=="images"]
+    out
+}
+
+has_segdir <- function(imdir_paths) grepl("[sS]egmentation",list.dirs(dirname(imdir_paths), recursive=FALSE))
+
+has_fileinfo <- function(paths) {
+    # FileInfo.csv files should not be in images directory but their parent directory
+    paths[basename(paths)=="images"] <- dirname(paths[basename(paths)=="images"])
+    out <- sapply(paths, function(p) any(grepl("FileInfo\\.csv",list.files(p, recursive=FALSE))))
+    names(out) <- paths
+    return(out)
+}
+
+export_pattern <- "[[:alnum:]]{8}-[[:alnum:]]{4}-[[:alnum:]]{4}-[[:alnum:]]{4}-[[:alnum:]]{12}"
