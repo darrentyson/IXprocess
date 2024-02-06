@@ -162,3 +162,21 @@ has_fileinfo <- function(paths) {
 }
 
 export_pattern <- "[[:alnum:]]{8}-[[:alnum:]]{4}-[[:alnum:]]{4}-[[:alnum:]]{4}-[[:alnum:]]{12}"
+
+missing_imfiles <- function(finfo, topdir=NULL) {
+    if(class(finfo) == "character" & tryCatch({file.exists(finfo)}, error=function(cond) {FALSE})) {
+        if(is.null(topdir)) topdir <- dirname(finfo)
+        finfo <- read.csv(finfo)
+    }
+    
+    if (class(finfo) == "data.frame" & any(grepl("plate_name", colnames(finfo)))) {
+        plate_dir <- findPlateDir(topdir)
+        imfiles <- unlist(lapply(plate_dir, function(plate) list.files(plate, full.names=TRUE)))
+        finfo_imfiles <- file.path(plate_dir,finfo$file_name)
+        missing_files <- setdiff(finfo_imfiles, imfiles)
+        return(missing_files)
+    }  else {
+        message("Could not find fileInfo to determine location of imfiles")
+        return(NA)
+    }
+}
