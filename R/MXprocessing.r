@@ -58,8 +58,10 @@ findPlateDir <- function(dirpath)
 
     # find directories in top directory
     dl <- tryCatch({list.dirs(dirpath,recursive=FALSE)},error=NA)
-    # do not include Segmentation directory if it alredy exists
+    # do not include Segmentation directory if it already exists
     dl <- dl[!grepl('Segmentation',dl)]
+    # do not include old/older directory if it already exists
+    dl <- dl[!grepl('[oO]ld',dl)]
     if(length(dl) != 1 && is.na(dl[1]))
     {
         message(paste('Could not find any directories in',dirpath))
